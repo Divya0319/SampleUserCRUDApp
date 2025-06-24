@@ -52,43 +52,28 @@ pipeline {
 
                 sshagent (credentials: ['ec2-key']) {
                     sh '''
-                        # Copy files
-                        scp -o StrictHostKeyChecking=no alter_user.sql cleanup.sql setup_database.sql ec2-user@ec2-13-231-239-96.ap-northeast-1.compute.amazonaws.com:/home/ec2-user/
+                        # Copy SQL files to EC2
+                        scp -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -o ServerAliveCountMax=5 alter_user.sql cleanup.sql setup_database.sql ec2-user@ec2-18-183-34-205.ap-northeast-1.compute.amazonaws.com:/home/ec2-user/
+                    '''
 
-                        # SSH commands - using quoted here-doc delimiter
-                        ssh -o StrictHostKeyChecking=no ec2-user@ec2-13-231-239-96.ap-northeast-1.compute.amazonaws.com /bin/bash <<\'EOF\'
-                            set -e
+                    // Java Installation
+                    sh '''
+                        ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -o ServerAliveCountMax=5 ec2-user@ec2-18-183-34-205.ap-northeast-1.compute.amazonaws.com "set -e; which java || sudo yum install -y java-17-amazon-corretto; java -version"
+                    '''
 
-                            # Java installation
-                            which java || sudo yum install -y java-17-amazon-corretto
-                            java -version
+                    // MariaDB Installation
+                    sh '''
+                        ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -o ServerAliveCountMax=5 ec2-user@ec2-18-183-34-205.ap-northeast-1.compute.amazonaws.com "set -e; if ! command -v mysql >/dev/null; then sudo dnf install -y mariadb105-server; sudo systemctl enable mariadb; sudo systemctl start mariadb; else echo '=== MariaDB already installed ==='; sudo systemctl start mariadb || true; fi; mysql -V"
+                    '''
 
-                            # MariaDB setup
-                            if ! command -v mysql >/dev/null; then
-                                sudo dnf install -y mariadb105-server
-                                sudo systemctl enable mariadb
-                                sudo systemctl start mariadb
-                            else
-                                echo "=== MariaDB root password is already set and working. ==="
-                                sudo systemctl start mariadb || true
-                            fi
+                    // Root Password Setup & Cleanup
+                    sh '''
+                        ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -o ServerAliveCountMax=5 ec2-user@ec2-18-183-34-205.ap-northeast-1.compute.amazonaws.com "set -e; if mysql -u root -p'NewRootPassword123!' -e 'SELECT 1' 2>/dev/null; then echo '=== Root password already set ==='; else echo '=== Setting root password and cleanup ==='; sudo mysql -u root < /home/ec2-user/alter_user.sql; mysql -u root -p'NewRootPassword123!' < /home/ec2-user/cleanup.sql; fi"
+                    '''
 
-                            # Password configuration
-                            if mysql -u root -p"NewRootPassword123!" -e "SELECT 1" 2>/dev/null; then
-                                echo "=== Root password already set ==="
-                            else
-                                echo "=== Setting MariaDB root password and configuring authentication ==="
-                                sudo mysql -u root < /home/ec2-user/alter_user.sql
-                                echo "=== Running security cleanup ==="
-                                mysql -u root -p"NewRootPassword123!" < /home/ec2-user/cleanup.sql
-                            fi
-
-                            mysql -V
-
-                            # Database setup
-                            echo "=== Setting up MariaDB Database/User ==="
-                            mysql -u root -p"NewRootPassword123!" < /home/ec2-user/setup_database.sql
-EOF
+                    // Database Creation
+                    sh '''
+                        ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -o ServerAliveCountMax=5 ec2-user@ec2-18-183-34-205.ap-northeast-1.compute.amazonaws.com "set -e; echo '=== Setting up MariaDB Database/User ==='; mysql -u root -p'NewRootPassword123!' < /home/ec2-user/setup_database.sql"
                     '''
                 }
             }
@@ -99,10 +84,10 @@ EOF
                 sshagent (credentials: ['ec2-key']) {
                     sh '''
                         # Copy JAR file
-                        scp -o StrictHostKeyChecking=no target/*.jar ec2-user@ec2-13-231-239-96.ap-northeast-1.compute.amazonaws.com:/home/ec2-user/app.jar
+                        scp -o StrictHostKeyChecking=no target/*.jar ec2-user@ec2-18-183-34-205.ap-northeast-1.compute.amazonaws.com:/home/ec2-user/app.jar
 
                         # Deploy with better debugging
-                        ssh -o StrictHostKeyChecking=no ec2-user@ec2-13-231-239-96.ap-northeast-1.compute.amazonaws.com /bin/bash <<\'EOF\'
+                        ssh -o StrictHostKeyChecking=no ec2-user@ec2-18-183-34-205.ap-northeast-1.compute.amazonaws.com /bin/bash <<\'EOF\'
                             # Stop existing app
                             echo "=== Stopping existing application ==="
                             pgrep -f app.jar && pkill -f app.jar
