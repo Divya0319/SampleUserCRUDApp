@@ -53,10 +53,10 @@ pipeline {
                 sshagent (credentials: ['ec2-key']) {
                     sh '''
                         # Copy files
-                        scp -o StrictHostKeyChecking=no alter_user.sql cleanup.sql setup_database.sql ec2-user@ec2-54-238-181-105.ap-northeast-1.compute.amazonaws.com:/home/ec2-user/
+                        scp -o StrictHostKeyChecking=no alter_user.sql cleanup.sql setup_database.sql ec2-user@ec2-13-231-239-96.ap-northeast-1.compute.amazonaws.com:/home/ec2-user/
 
                         # SSH commands - using quoted here-doc delimiter
-                        ssh -o StrictHostKeyChecking=no ec2-user@ec2-54-238-181-105.ap-northeast-1.compute.amazonaws.com /bin/bash <<\'EOF\'
+                        ssh -o StrictHostKeyChecking=no ec2-user@ec2-13-231-239-96.ap-northeast-1.compute.amazonaws.com /bin/bash <<\'EOF\'
                             set -e
 
                             # Java installation
@@ -99,10 +99,10 @@ EOF
                 sshagent (credentials: ['ec2-key']) {
                     sh '''
                         # Copy JAR file
-                        scp -o StrictHostKeyChecking=no target/*.jar ec2-54-238-181-105.ap-northeast-1.compute.amazonaws.com:/home/ec2-user/app.jar
+                        scp -o StrictHostKeyChecking=no target/*.jar ec2-user@ec2-13-231-239-96.ap-northeast-1.compute.amazonaws.com:/home/ec2-user/app.jar
 
                         # Deploy with better debugging
-                        ssh -o StrictHostKeyChecking=no ec2-54-238-181-105.ap-northeast-1.compute.amazonaws.com /bin/bash <<\'EOF\'
+                        ssh -o StrictHostKeyChecking=no ec2-user@ec2-13-231-239-96.ap-northeast-1.compute.amazonaws.com /bin/bash <<\'EOF\'
                             # Stop existing app
                             echo "=== Stopping existing application ==="
                             pgrep -f app.jar && pkill -f app.jar
