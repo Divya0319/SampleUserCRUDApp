@@ -53,7 +53,7 @@ pipeline {
                 sshagent (credentials: ['ubuntu-ec2-key']) {
                     sh '''
                         # Copy SQL files to EC2
-                        scp -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -o ServerAliveCountMax=5 alter_user.sql cleanup.sql setup_database.sql ubuntu@ec2-18-183-84-167.ap-northeast-1.compute.amazonaws.com:/home/ec2-user/
+                        scp -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -o ServerAliveCountMax=5 alter_user.sql cleanup.sql setup_database.sql ubuntu@ec2-18-183-84-167.ap-northeast-1.compute.amazonaws.com:/home/ubuntu/
                     '''
 
                     // Java Installation
@@ -68,12 +68,12 @@ pipeline {
 
                     // Root Password Setup & Cleanup
                     sh '''
-                        ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -o ServerAliveCountMax=5 ubuntu@ec2-18-183-84-167.ap-northeast-1.compute.amazonaws.com "set -e; if mysql -u root -p'NewRootPassword123!' -e 'SELECT 1' 2>/dev/null; then echo '=== Root password already set ==='; else echo '=== Setting root password and cleanup ==='; sudo mysql < /home/ec2-user/alter_user.sql; mysql -u root -p'NewRootPassword123!' < /home/ec2-user/cleanup.sql; fi"
+                        ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -o ServerAliveCountMax=5 ubuntu@ec2-18-183-84-167.ap-northeast-1.compute.amazonaws.com "set -e; if mysql -u root -p'NewRootPassword123!' -e 'SELECT 1' 2>/dev/null; then echo '=== Root password already set ==='; else echo '=== Setting root password and cleanup ==='; sudo mysql < /home/ubuntu/alter_user.sql; mysql -u root -p'NewRootPassword123!' < /home/ubuntu/cleanup.sql; fi"
                     '''
 
                     // Database Creation
                     sh '''
-                        ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -o ServerAliveCountMax=5 ubuntu@ec2-18-183-84-167.ap-northeast-1.compute.amazonaws.com "set -e; echo '=== Setting up MySQL Database/User ==='; mysql -u root -p'NewRootPassword123!' < /home/ec2-user/setup_database.sql"
+                        ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -o ServerAliveCountMax=5 ubuntu@ec2-18-183-84-167.ap-northeast-1.compute.amazonaws.com "set -e; echo '=== Setting up MySQL Database/User ==='; mysql -u root -p'NewRootPassword123!' < /home/ubuntu/setup_database.sql"
                     '''
                 }
             }
@@ -84,7 +84,7 @@ pipeline {
                 sshagent (credentials: ['ubuntu-ec2-key']) {
                     sh '''
                         # Copy JAR file
-                        scp -o StrictHostKeyChecking=no target/*.jar ubuntu@ec2-18-183-84-167.ap-northeast-1.compute.amazonaws.com:/home/ec2-user/app.jar
+                        scp -o StrictHostKeyChecking=no target/*.jar ubuntu@ec2-18-183-84-167.ap-northeast-1.compute.amazonaws.com:/home/ubuntu/app.jar
 
                         # Deploy with better debugging
                         ssh -o StrictHostKeyChecking=no ubuntu@ec2-18-183-84-167.ap-northeast-1.compute.amazonaws.com /bin/bash <<\'EOF\'
@@ -99,7 +99,7 @@ pipeline {
 
                             # Start new instance with debug output
                             echo "=== Starting Application ==="
-                            nohup java -jar /home/ec2-user/app.jar > /home/ec2-user/app.log 2>&1 &
+                            nohup java -jar /home/ubuntu/app.jar > /home/ubuntu/app.log 2>&1 &
                             sleep 5
 
                             # Verify
@@ -109,7 +109,7 @@ pipeline {
                                 exit 0
                             else
                                 echo "=== Application Logs ==="
-                                cat /home/ec2-user/app.log
+                                cat /home/ubuntu/app.log
                                 echo "ERROR: Process failed to start"
                                 exit 1
                             fi
