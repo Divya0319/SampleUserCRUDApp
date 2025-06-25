@@ -34,7 +34,7 @@ pipeline {
             steps {
                 // Write SQL files
                 writeFile file: 'alter_user.sql', text: '''
-        ALTER USER 'root'@'localhost' IDENTIFIED BY 'NewRootPassword123!';
+        ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'NewRootPassword123!';
         FLUSH PRIVILEGES;
         '''
                 writeFile file: 'cleanup.sql', text: '''
@@ -53,27 +53,27 @@ pipeline {
                 sshagent (credentials: ['ec2-key']) {
                     sh '''
                         # Copy SQL files to EC2
-                        scp -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -o ServerAliveCountMax=5 alter_user.sql cleanup.sql setup_database.sql ec2-user@ec2-35-78-82-28.ap-northeast-1.compute.amazonaws.com:/home/ec2-user/
+                        scp -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -o ServerAliveCountMax=5 alter_user.sql cleanup.sql setup_database.sql ec2-user@ec2-18-183-84-167.ap-northeast-1.compute.amazonaws.com:/home/ec2-user/
                     '''
 
                     // Java Installation
                     sh '''
-                        ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -o ServerAliveCountMax=5 ec2-user@ec2-35-78-82-28.ap-northeast-1.compute.amazonaws.com "set -e; which java || sudo yum install -y java-17-amazon-corretto; java -version"
+                        ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -o ServerAliveCountMax=5 ec2-user@ec2-18-183-84-167.ap-northeast-1.compute.amazonaws.com "set -e; sudo apt-get update; sudo apt-get upgrade; which java || sudo apt install openjdk-17-jdk openjdk-17-jre; java --version"
                     '''
 
-                    // MariaDB Installation
+                    // MySQL Installation
                     sh '''
-                        ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -o ServerAliveCountMax=5 ec2-user@ec2-35-78-82-28.ap-northeast-1.compute.amazonaws.com "set -e; if ! command -v mysql >/dev/null; then sudo dnf install -y mariadb105-server; sudo systemctl enable mariadb; sudo systemctl start mariadb; else echo '=== MariaDB already installed ==='; sudo systemctl start mariadb || true; fi; mysql -V"
+                        ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -o ServerAliveCountMax=5 ec2-user@ec2-18-183-84-167.ap-northeast-1.compute.amazonaws.com "set -e; if ! command -v mysql >/dev/null; then sudo apt update; sudo apt install mysql-server -y; sudo systemctl enable mysql; sudo systemctl start mysql; else echo '=== MySQL already installed ==='; sudo systemctl start mysql || true; fi; mysql --version"
                     '''
 
                     // Root Password Setup & Cleanup
                     sh '''
-                        ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -o ServerAliveCountMax=5 ec2-user@ec2-35-78-82-28.ap-northeast-1.compute.amazonaws.com "set -e; if mysql -u root -p'NewRootPassword123!' -e 'SELECT 1' 2>/dev/null; then echo '=== Root password already set ==='; else echo '=== Setting root password and cleanup ==='; sudo mysql -u root < /home/ec2-user/alter_user.sql; mysql -u root -p'NewRootPassword123!' < /home/ec2-user/cleanup.sql; fi"
+                        ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -o ServerAliveCountMax=5 ec2-user@ec2-18-183-84-167.ap-northeast-1.compute.amazonaws.com "set -e; if mysql -u root -p'NewRootPassword123!' -e 'SELECT 1' 2>/dev/null; then echo '=== Root password already set ==='; else echo '=== Setting root password and cleanup ==='; sudo mysql < /home/ec2-user/alter_user.sql; mysql -u root -p'NewRootPassword123!' < /home/ec2-user/cleanup.sql; fi"
                     '''
 
                     // Database Creation
                     sh '''
-                        ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -o ServerAliveCountMax=5 ec2-user@ec2-35-78-82-28.ap-northeast-1.compute.amazonaws.com "set -e; echo '=== Setting up MariaDB Database/User ==='; mysql -u root -p'NewRootPassword123!' < /home/ec2-user/setup_database.sql"
+                        ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -o ServerAliveCountMax=5 ec2-user@ec2-18-183-84-167.ap-northeast-1.compute.amazonaws.com "set -e; echo '=== Setting up MySQL Database/User ==='; mysql -u root -p'NewRootPassword123!' < /home/ec2-user/setup_database.sql"
                     '''
                 }
             }
@@ -84,10 +84,10 @@ pipeline {
                 sshagent (credentials: ['ec2-key']) {
                     sh '''
                         # Copy JAR file
-                        scp -o StrictHostKeyChecking=no target/*.jar ec2-user@ec2-35-78-82-28.ap-northeast-1.compute.amazonaws.com:/home/ec2-user/app.jar
+                        scp -o StrictHostKeyChecking=no target/*.jar ec2-user@ec2-18-183-84-167.ap-northeast-1.compute.amazonaws.com:/home/ec2-user/app.jar
 
                         # Deploy with better debugging
-                        ssh -o StrictHostKeyChecking=no ec2-user@ec2-35-78-82-28.ap-northeast-1.compute.amazonaws.com /bin/bash <<\'EOF\'
+                        ssh -o StrictHostKeyChecking=no ec2-user@ec2-18-183-84-167.ap-northeast-1.compute.amazonaws.com /bin/bash <<\'EOF\'
                             # Stop existing app
                             echo "=== Stopping existing application ==="
                             pgrep -f app.jar && pkill -f app.jar
@@ -95,7 +95,7 @@ pipeline {
 
                             # Check port usage
                             echo "=== Port 8080 Status ==="
-                            sudo netstat -tulnp | grep 8080 || echo "Port 8080 available"
+                            sudo ss -tulnp | grep 8080 || echo "Port 8080 available"
 
                             # Start new instance with debug output
                             echo "=== Starting Application ==="
