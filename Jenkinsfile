@@ -1,10 +1,6 @@
 pipeline {
     agent any
 
-    options {
-        skipDefaultCheckout(true)
-    }
-
     environment {
             AWS_ACCESS_KEY_ID = credentials('AWS_ACCESS_KEY_ID')
             AWS_SECRET_ACCESS_KEY = credentials('AWS_SECRET_ACCESS_KEY')
@@ -16,17 +12,11 @@ pipeline {
         }
 
     stages {
-        stage('Clean Workspace') {
-            steps {
-                cleanWs()
-            }
-        }
 
         stage('Checkout') {
             steps {
                 // Jenkins will automatically check out the source if using Pipeline from SCM
                 echo "Source code checked out from GitHub branch: dep-ubuntu"
-                git url: 'https://github.com/Divya0319/SampleUserCRUDApp', branch: 'main'
             }
         }
 
