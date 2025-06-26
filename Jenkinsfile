@@ -52,7 +52,7 @@ pipeline {
                 sshagent (credentials: ['ubuntu-ec2-key']) {
                     sh '''
                         # Copy JAR file
-                        scp -v -o StrictHostKeyChecking=no ServerAliveInterval=60 -o ServerAliveCountMax=5 target/*.jar ubuntu@ec2-35-77-225-211.ap-northeast-1.compute.amazonaws.com:/home/ubuntu/app.jar
+                        scp -v -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -o ServerAliveCountMax=5 target/*.jar ubuntu@ec2-35-77-225-211.ap-northeast-1.compute.amazonaws.com:/home/ubuntu/app.jar
 
                         # Deploy with better debugging
                         ssh -o StrictHostKeyChecking=no ServerAliveInterval=60 -o ServerAliveCountMax=5 ubuntu@ec2-35-77-225-211.ap-northeast-1.compute.amazonaws.com /bin/bash <<\'EOF\'
