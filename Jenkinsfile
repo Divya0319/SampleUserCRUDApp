@@ -9,14 +9,13 @@ pipeline {
             S3_KEY = 'app.jar'
             EC2_USER = 'ubuntu'
             EC2_HOST = 'ec2-35-77-225-211.ap-northeast-1.compute.amazonaws.com'
-        }
+    }
 
     stages {
 
         stage('Shell Test') {
             steps {
                 sh 'echo "Shell is working fine"'
-
             }
         }
 
