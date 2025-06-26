@@ -41,11 +41,11 @@ pipeline {
         }
 
         stage('Upload to S3') {
-                    steps {
-                        echo 'Uploading JAR to S3...'
-                        sh 'aws s3 cp target/*.jar s3://${S3_BUCKET}/${S3_KEY}'
-                    }
-                }
+            steps {
+                echo 'Uploading JAR to S3...'
+                sh 'aws s3 cp target/*.jar s3://${S3_BUCKET}/${S3_KEY}'
+            }
+        }
 
         stage('Provision EC2') {
             steps {
