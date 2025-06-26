@@ -1,6 +1,16 @@
 pipeline {
     agent any
 
+    environment {
+            AWS_ACCESS_KEY_ID = credentials('AWS_ACCESS_KEY_ID')
+            AWS_SECRET_ACCESS_KEY = credentials('AWS_SECRET_ACCESS_KEY')
+            AWS_DEFAULT_REGION = 'ap-northeast-1'
+            S3_BUCKET = 'bkt-sample-app-artifacts'
+            S3_KEY = 'app.jar'
+            EC2_USER = 'ubuntu'
+            EC2_HOST = 'ec2-35-77-225-211.ap-northeast-1.compute.amazonaws.com'
+        }
+
     stages {
         stage('Checkout') {
             steps {
@@ -30,18 +40,22 @@ pipeline {
             }
         }
 
+        stage('Upload to S3') {
+                    steps {
+                        echo 'Uploading JAR to S3...'
+                        sh 'aws s3 cp target/*.jar s3://${S3_BUCKET}/${S3_KEY}'
+                    }
+                }
+
         stage('Provision EC2') {
             steps {
 
-
                 sshagent (credentials: ['ubuntu-ec2-key']) {
-
 
                     // Java Installation
                     sh '''
-                        ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -o ServerAliveCountMax=5 ubuntu@ec2-35-77-225-211.ap-northeast-1.compute.amazonaws.com "set -e; sudo apt-get update -y; sudo apt-get upgrade -y; which java || sudo apt install openjdk-17-jdk openjdk-17-jre -y; java --version"
+                        ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -o ServerAliveCountMax=5 ${EC2_USER}@${EC2_HOST} "set -e; sudo apt-get update -y; sudo apt-get upgrade -y; which java || sudo apt install openjdk-17-jdk openjdk-17-jre -y; java --version"
                     '''
-
 
                 }
             }
@@ -50,20 +64,22 @@ pipeline {
         stage('Deploy to EC2') {
             steps {
                 sshagent (credentials: ['ubuntu-ec2-key']) {
+                    echo 'Deploying on EC2...'
                     sh '''
-                        # Copy JAR file
-                        scp -v -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -o ServerAliveCountMax=5 target/*.jar ubuntu@ec2-35-77-225-211.ap-northeast-1.compute.amazonaws.com:/home/ubuntu/app.jar
+                        echo "Pulling latest JAR from S3..."
+                        aws s3 cp s3://${S3_BUCKET}/${S3_KEY} /home/ubuntu/app.jar
 
                         # Deploy with better debugging
-                        ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -o ServerAliveCountMax=5 ubuntu@ec2-35-77-225-211.ap-northeast-1.compute.amazonaws.com /bin/bash <<\'EOF\'
+                        set -e
+                        ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -o ServerAliveCountMax=5 ${EC2_USER}@${EC2_HOST} /bin/bash <<\'EOF\'
                             # Stop existing app
                             echo "=== Stopping existing application ==="
                             pgrep -f app.jar && pkill -f app.jar
                             sleep 3
 
                             # Check port usage
-                            echo "=== Port 8080 Status ==="
-                            sudo ss -tulnp | grep 8080 || echo "Port 8080 available"
+                            echo "=== Port 8100 Status ==="
+                            sudo ss -tulnp | grep 8100 || echo "Port 8100 available"
 
                             # Start new instance with debug output
                             echo "=== Starting Application ==="
