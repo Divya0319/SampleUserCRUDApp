@@ -13,6 +13,12 @@ pipeline {
 
     stages {
 
+        stage('Shell Test') {
+            steps {
+                sh 'echo "Shell is working fine"'
+            }
+        }
+
         stage('Checkout') {
             steps {
                 // Jenkins will automatically check out the source if using Pipeline from SCM
