@@ -16,6 +16,7 @@ pipeline {
         stage('Shell Test') {
             steps {
                 sh 'echo "Shell is working fine"'
+
             }
         }
 
