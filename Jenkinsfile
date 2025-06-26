@@ -82,6 +82,7 @@ pipeline {
                             aws s3 cp s3://${S3_BUCKET}/${S3_KEY} /home/ubuntu/app.jar
 EOF
 
+
                         # Deploy with better debugging
                         set -e
                         ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -o ServerAliveCountMax=5 ${EC2_USER}@${EC2_HOST} /bin/bash <<\'EOF\'
