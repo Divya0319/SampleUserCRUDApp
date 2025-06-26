@@ -47,6 +47,7 @@ pipeline {
             }
         }
 
+
         stage('Provision EC2') {
             steps {
 
