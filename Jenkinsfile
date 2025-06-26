@@ -22,15 +22,15 @@ pipeline {
         stage('Build') {
             steps {
                 echo "Building the project..."
-                sh 'chmod +x mvnw'
-                sh './mvnw clean package -DskipTests'
+                sh '/bin/bash -c "chmod +x mvnw"'
+                sh '/bin/bash -c "./mvnw clean package -DskipTests"'
             }
         }
 
         stage('Package Info') {
             steps {
                 echo "Listing target folder contents..."
-                sh 'ls -lh target'
+                sh '/bin/bash -c "ls -lh target"'
             }
         }
 
