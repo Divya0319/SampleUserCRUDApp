@@ -72,7 +72,7 @@ pipeline {
 
         stage('Deploy to EC2') {
             steps {
-                sshagent (credentials: ['ubuntu-ec2-key']) {
+                sshagent (credentials: ['ec2-key']) {
                     echo 'Deploying on EC2...'
                     sh '''
                         echo "Pulling latest JAR from S3..."
