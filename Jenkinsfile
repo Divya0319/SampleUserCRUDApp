@@ -8,7 +8,7 @@ pipeline {
             S3_BUCKET = 'bkt-sample-app-artifacts'
             S3_KEY = 'app.jar'
             EC2_USER = 'ubuntu'
-            EC2_HOST = 'ec2-52-194-236-162.ap-northeast-1.compute.amazonaws.com'
+            EC2_HOST = 'ec2-54-238-200-192.ap-northeast-1.compute.amazonaws.com'
     }
 
     stages {
