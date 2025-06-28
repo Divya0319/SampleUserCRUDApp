@@ -59,7 +59,7 @@ pipeline {
         stage('Provision EC2') {
             steps {
 
-                sshagent (credentials: ['ubuntu-ec2-key']) {
+                sshagent (credentials: ['ec2-key']) {
 
                     // Java Installation
                     sh '''
